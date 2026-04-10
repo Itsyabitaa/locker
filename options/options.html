@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Locker — Settings</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="header">
+        <h1>Locker</h1>
+        <p>Configure PIN, auto-lock, and where the lock screen appears.</p>
+      </header>
+
+      <div class="grid">
+        <section class="card" aria-labelledby="sec-security">
+          <h2 id="sec-security">Security</h2>
+          <p class="card-desc">PIN is stored as SHA-256 only. Minimum length: 4 characters.</p>
+
+          <div id="set-form">
+            <label class="field-label" for="new-pin">New PIN</label>
+            <input id="new-pin" type="password" autocomplete="new-password" maxlength="128" />
+            <label class="field-label" for="confirm-pin">Confirm PIN</label>
+            <input id="confirm-pin" type="password" autocomplete="new-password" maxlength="128" />
+            <div class="row-actions">
+              <button type="button" class="btn-primary" id="save-set">Save PIN</button>
+            </div>
+          </div>
+
+          <div id="change-form" class="hidden">
+            <div class="two-col">
+              <div class="full">
+                <label class="field-label" for="old-pin">Current PIN</label>
+                <input id="old-pin" type="password" autocomplete="current-password" maxlength="128" />
+              </div>
+              <div>
+                <label class="field-label" for="new-pin-ch">New PIN</label>
+                <input id="new-pin-ch" type="password" autocomplete="new-password" maxlength="128" />
+              </div>
+              <div>
+                <label class="field-label" for="confirm-pin-ch">Confirm new PIN</label>
+                <input id="confirm-pin-ch" type="password" autocomplete="new-password" maxlength="128" />
+              </div>
+            </div>
+            <div class="row-actions">
+              <button type="button" class="btn-primary" id="save-change">Change PIN</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="sec-autolock">
+          <h2 id="sec-autolock">Auto-lock</h2>
+          <p class="card-desc">Re-show the lock screen after you stop interacting with the page.</p>
+
+          <label class="toggle">
+            <input id="auto-lock-enabled" type="checkbox" checked />
+            <span class="t-text">
+              <strong>Enable auto-lock</strong>
+              <span>Tracks mouse, keyboard, scroll, and touch. Timer resets on activity.</span>
+            </span>
+          </label>
+
+          <label class="field-label" for="inactivity-min">Inactivity timeout (minutes)</label>
+          <input id="inactivity-min" type="number" min="1" max="1440" value="2" step="1" />
+          <div class="row-actions">
+            <button type="button" class="btn-secondary" id="save-auto-lock">Save timeout</button>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="sec-scope">
+          <h2 id="sec-scope">Where to lock</h2>
+          <p class="card-desc">Turn off “Lock all websites” to only lock domains you list.</p>
+
+          <label class="toggle">
+            <input id="lock-enabled" type="checkbox" checked />
+            <span class="t-text">
+              <strong>Locking enabled</strong>
+              <span>When off, no pages are blocked. Your PIN is kept.</span>
+            </span>
+          </label>
+
+          <label class="toggle">
+            <input id="global-lock" type="checkbox" checked />
+            <span class="t-text">
+              <strong>Lock all websites</strong>
+              <span>When off, only the domains below match (subdomains included, suffix-safe).</span>
+            </span>
+          </label>
+
+          <label class="field-label" for="locked-sites">Domains to lock (one per line)</label>
+          <textarea id="locked-sites" spellcheck="false" placeholder="youtube.com"></textarea>
+          <p class="hint">Example: m.youtube.com matches youtube.com. youtube.com.evil.com does not.</p>
+          <div class="row-actions">
+            <button type="button" class="btn-secondary" id="save-sites">Save site list</button>
+          </div>
+        </section>
+      </div>
+
+      <p id="status" role="status" aria-live="polite"></p>
+    </div>
+
+    <script src="../src/sha256.js"></script>
+    <script src="../src/settings-common.js"></script>
+    <script src="options.js"></script>
+  </body>
+</html>
