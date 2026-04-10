@@ -13,6 +13,8 @@
   const ACTIVITY_THROTTLE_MS = 500;
   const MAX_PIN_ATTEMPTS = 5;
   const LOCKOUT_MS = 60 * 1000;
+  /** After correct PIN, same tab stays "unlocked" across reloads until auto-lock, quick lock, or PIN/settings change. */
+  const SESSION_UNLOCK_KEY = "locker_tab_unlocked_v1";
 
   let storedPinHash = null;
   /** Master switch from popup; false = never show overlay. */
@@ -36,6 +38,26 @@
   let pinFailCount = 0;
   let lockoutUntil = 0;
   let lockoutUiTimerId = null;
+
+  function clearTabSessionUnlock() {
+    try {
+      sessionStorage.removeItem(SESSION_UNLOCK_KEY);
+    } catch (_) {}
+  }
+
+  function setTabSessionUnlock() {
+    try {
+      sessionStorage.setItem(SESSION_UNLOCK_KEY, "1");
+    } catch (_) {}
+  }
+
+  function isTabSessionUnlocked() {
+    try {
+      return sessionStorage.getItem(SESSION_UNLOCK_KEY) === "1";
+    } catch (_) {
+      return false;
+    }
+  }
 
   function ensureStyle() {
     if (document.getElementById(LOCK_STYLE_ID)) return;
@@ -488,6 +510,7 @@
           lockoutUntil = 0;
           stopLockoutCountdown();
           setLockedOutUi(false);
+          setTabSessionUnlock();
           removeLock();
           showError("");
           startOrRestartInactivityTimer();
@@ -533,6 +556,7 @@
 
   function forceShowLockOverlay() {
     if (!lastLockDecision) return;
+    clearTabSessionUnlock();
     if (document.getElementById(LOCK_ROOT_ID)) {
       startOrRestartInactivityTimer();
       return;
@@ -613,8 +637,17 @@
     if (!lastLockDecision) {
       removeLock();
       clearInactivityTimer();
+      clearTabSessionUnlock();
       return;
     }
+
+    if (isTabSessionUnlocked()) {
+      removeLock();
+      bindActivityListeners();
+      startOrRestartInactivityTimer();
+      return;
+    }
+
     if (document.getElementById(LOCK_ROOT_ID)) removeLock();
     renderLock();
     bindActivityListeners();
@@ -624,6 +657,9 @@
   function init() {
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area !== "local") return;
+      if (changes[STORAGE_KEY_PIN] || changes[STORAGE_KEY_LOCKED]) {
+        clearTabSessionUnlock();
+      }
       if (changes[STORAGE_KEY_QUICK_LOCK]) {
         forceShowLockOverlay();
       }
