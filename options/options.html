@@ -76,9 +76,12 @@
             <input id="lock-enabled" type="checkbox" checked />
             <span class="t-text">
               <strong>Locking enabled</strong>
-              <span>When off, no pages are blocked. Your PIN is kept.</span>
+              <span>When off, no pages are blocked. Your PIN is kept. Turning this off requires your PIN if one is set.</span>
             </span>
           </label>
+          <p class="hint browser-limit">
+            Chrome does not allow extensions to block the “Disable” switch on <code>chrome://extensions</code>. PIN protection applies to this settings page only.
+          </p>
 
           <label class="toggle">
             <input id="global-lock" type="checkbox" checked />
@@ -98,6 +101,20 @@
       </div>
 
       <p id="status" role="status" aria-live="polite"></p>
+    </div>
+
+    <div id="pin-gate-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="pin-gate-title">
+      <div class="modal-backdrop" id="pin-gate-backdrop"></div>
+      <div class="modal-box">
+        <h3 id="pin-gate-title">Enter PIN to disable locking</h3>
+        <p class="modal-desc">Locker will stop blocking pages until you enable it again.</p>
+        <label class="field-label" for="pin-gate-input">PIN</label>
+        <input id="pin-gate-input" type="password" autocomplete="current-password" maxlength="128" />
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="pin-gate-cancel">Cancel</button>
+          <button type="button" class="btn-primary" id="pin-gate-confirm">Disable locking</button>
+        </div>
+      </div>
     </div>
 
     <script src="../src/sha256.js"></script>
