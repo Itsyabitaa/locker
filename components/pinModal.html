@@ -1,0 +1,21 @@
+<div class="locker-modal-root" role="dialog" aria-modal="true">
+  <div class="locker-modal-backdrop" data-pin-modal-backdrop></div>
+  <div class="locker-modal-panel">
+    <h3 data-pin-modal-title></h3>
+    <p class="locker-modal-desc" data-pin-modal-desc></p>
+    <label class="locker-field-label" for="locker-pin-modal-input">PIN</label>
+    <input
+      id="locker-pin-modal-input"
+      class="locker-input"
+      type="password"
+      autocomplete="current-password"
+      maxlength="128"
+      data-pin-modal-input
+    />
+    <p class="locker-modal-error" data-pin-modal-error aria-live="polite"></p>
+    <div class="locker-modal-actions">
+      <button type="button" class="locker-btn locker-btn-secondary" data-pin-modal-cancel>Cancel</button>
+      <button type="button" class="locker-btn locker-btn-primary" data-pin-modal-confirm></button>
+    </div>
+  </div>
+</div>
