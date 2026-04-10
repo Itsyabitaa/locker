@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Locker",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Lock screen overlay with PIN, settings page, auto-lock, and quick lock.",
   "permissions": ["storage", "tabs"],
   "commands": {
