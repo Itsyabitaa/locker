@@ -35,55 +35,92 @@ After code changes: on the extensions page, click **Reload** on Locker, then rel
 
 Settings persist in **`chrome.storage.local`** (survives browser restart; clearing **site data** for extensions is separate from normal cache clearing).
 
-## Project layout (separation of concerns)
+## Project structure
 
-- **UI** — `popup/`, `options/`, `content/overlay/`, `components/` (shared modal / buttons; PIN modal template).
-- **Logic** — `content/engine/` (lock rules), `shared/hash.js` (crypto helpers).
-- **State** — `shared/storage.js` (and `chrome.storage` in options/popup where appropriate).
-- **Control** — `background/background.js`, `content/content.js` (orchestration).
+Locker is organized by **separation of concerns**: UI surfaces, pure logic, shared state, and control/orchestration.
+
+| Layer | Folders / files | Responsibility |
+|--------|------------------|----------------|
+| **UI** | `popup/`, `options/`, `components/`, `content/overlay/` | HTML, CSS, DOM events (overlay does not decide policy; it mounts UI and delegates). |
+| **Logic** | `content/engine/lockEngine.js`, `shared/hash.js` | Domain/lock decisions; SHA-256 + timing-safe compare (engine has no DOM/`chrome`). |
+| **State** | `shared/constants.js`, `shared/storage.js`, `shared/utils.js` | Keys, limits, storage helpers, PIN/site validation. |
+| **Control** | `background/background.js`, `content/content.js` | Shortcuts, storage broadcast, tab orchestration, overlay lifecycle, auto-lock. |
+
+### Directory tree
 
 ```
 locker/
-├── manifest.json
+├── manifest.json                 # MV3: background, action popup, options, content_scripts
+│
 ├── background/
-│   └── background.js
+│   └── background.js             # Quick-lock command; storage.onChanged → CHECK_LOCK broadcast
+│
 ├── shared/
-│   ├── constants.js
-│   ├── storage.js
-│   ├── utils.js
-│   └── hash.js
-├── components/
-│   ├── components.css
-│   ├── modal.js
-│   ├── button.js
-│   ├── input.js
-│   ├── toggle.js
-│   ├── pinModal.html
-│   └── pinModal.js
+│   ├── constants.js              # STORAGE_KEYS, LockerEvents, SESSION_UNLOCK_KEY, limits
+│   ├── storage.js                # LockerStorage.getSettings / setSettings
+│   ├── utils.js                  # LockerUtils: validatePinPair, sitesFromTextarea
+│   └── hash.js                   # lockerSha256Hex, lockerTimingSafeEqualHex, LockerHash
+│
+├── components/                   # Reusable UI (options; fetch-based PIN modal)
+│   ├── components.css            # Shared button/input/modal styles
+│   ├── modal.js                  # LockerModal: escape handler, remove
+│   ├── button.js                 # LockerButton: primary/secondary classes
+│   ├── input.js                  # LockerInput: password read/clear
+│   ├── toggle.js                 # LockerToggle: checkbox onChange helper
+│   ├── pinModal.html             # PIN modal markup (fetched by pinModal.js)
+│   └── pinModal.js               # LockerPinModal.open({ onVerify, … })
+│
 ├── content/
-│   ├── content.js
+│   ├── content.js                # Orchestrator: storage, engine, session, overlay, guards, auto-lock
 │   ├── engine/
-│   │   └── lockEngine.js
+│   │   └── lockEngine.js         # lockerNormalizeHostname, lockerShouldLock, lockerNormalizeLockedSitesList
 │   ├── session/
-│   │   └── sessionManager.js
+│   │   └── sessionManager.js     # LockerSession: tab sessionStorage unlock flags
 │   └── overlay/
-│       ├── overlay.html
-│       ├── overlay.css
-│       └── overlay.js
+│       ├── overlay.html          # Lock screen markup (fetched by overlay.js)
+│       ├── overlay.css           # Injected via manifest content_scripts.css
+│       └── overlay.js            # LockerOverlay.mount / unmount
+│
 ├── options/
-│   ├── options.html
-│   ├── options.css
-│   ├── options.js          # wires section modules
+│   ├── options.html              # Settings dashboard (loads shared + components + sections)
+│   ├── options.css               # Page layout and cards
+│   ├── options.js                # Boot: LockerStorage.getSettings, init section modules
 │   └── sections/
-│       ├── generalSettings.js
-│       ├── siteManager.js
-│       ├── securitySettings.js
-│       └── autoLockSettings.js
+│       ├── generalSettings.js    # Locking enabled, global lock, PIN modal to disable locking
+│       ├── siteManager.js        # Domain list save
+│       ├── securitySettings.js   # Set/change PIN
+│       └── autoLockSettings.js   # Auto-lock toggle and inactivity minutes
+│
 └── popup/
-    ├── popup.html
+    ├── popup.html                # Status, Lock (quick lock), Unlock → settings, open full settings
     ├── popup.css
-    └── popup.js
+    └── popup.js                  # locked flag, quickLockAt; storage listener for status
 ```
+
+### Manifest entry points
+
+| Entry | Path |
+|--------|------|
+| Service worker | `background/background.js` (`importScripts("../shared/constants.js")`) |
+| Toolbar popup | `popup/popup.html` |
+| Options page | `options/options.html` |
+
+**Content scripts** (order matters; no bundler):
+
+1. `shared/constants.js`
+2. `shared/utils.js`
+3. `shared/storage.js`
+4. `shared/hash.js`
+5. `content/engine/lockEngine.js`
+6. `content/session/sessionManager.js`
+7. `content/overlay/overlay.js`
+8. `content/content.js`
+
+**Content CSS:** `content/overlay/overlay.css`
+
+**Options page scripts** (see `options/options.html`): `shared/*` → `components/*` (`modal`, `button`, `input`, `toggle`, `pinModal`) → `options/sections/*.js` → `options.js`.
+
+**Popup scripts:** `shared/constants.js` → `popup.js`.
 
 ## Limitations
 
