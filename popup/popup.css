@@ -1,0 +1,113 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  width: 320px;
+  margin: 0;
+  padding: 16px;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  font-size: 14px;
+  color: #e8e8ed;
+  background: #14151a;
+}
+
+h1 {
+  margin: 0 0 12px 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+label {
+  display: block;
+  margin: 10px 0 4px 0;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+input[type="password"] {
+  width: 100%;
+  height: 38px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-size: 14px;
+}
+
+input:focus {
+  outline: 2px solid rgba(100, 150, 255, 0.45);
+  outline-offset: 0;
+}
+
+button {
+  margin-top: 14px;
+  width: 100%;
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-weight: 650;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+button:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.hidden {
+  display: none !important;
+}
+
+#status {
+  margin: 12px 0 0 0;
+  min-height: 20px;
+  font-size: 13px;
+}
+
+#status.error {
+  color: #ff9a9a;
+}
+
+#status.ok {
+  color: #8fd96b;
+}
+
+.toggle-row {
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.toggle-label input {
+  width: auto;
+  height: auto;
+  margin: 0;
+}
+
+.toggle-hint {
+  margin: 6px 0 0 22px;
+  font-size: 11px;
+  line-height: 1.35;
+  opacity: 0.75;
+}
+
+.hint {
+  margin: 0 0 12px 0;
+  font-size: 12px;
+  line-height: 1.4;
+  opacity: 0.8;
+}
