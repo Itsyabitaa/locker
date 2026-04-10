@@ -45,14 +45,110 @@ async function loadAndBind() {
     );
   }
 
-  lockCb?.addEventListener("change", async () => {
-    const on = lockCb.checked;
+  const pinGateModal = document.getElementById("pin-gate-modal");
+  const pinGateInput = document.getElementById("pin-gate-input");
+  const pinGateCancel = document.getElementById("pin-gate-cancel");
+  const pinGateConfirm = document.getElementById("pin-gate-confirm");
+  const pinGateBackdrop = document.getElementById("pin-gate-backdrop");
+
+  function openPinGateModal() {
+    pinGateModal?.classList.remove("hidden");
+    if (pinGateInput) {
+      pinGateInput.value = "";
+      pinGateInput.focus();
+    }
+  }
+
+  function closePinGateModal() {
+    pinGateModal?.classList.add("hidden");
+    if (pinGateInput) pinGateInput.value = "";
+  }
+
+  pinGateCancel?.addEventListener("click", () => {
+    closePinGateModal();
+    if (lockCb) lockCb.checked = true;
+    setStatus("");
+  });
+
+  pinGateBackdrop?.addEventListener("click", () => {
+    closePinGateModal();
+    if (lockCb) lockCb.checked = true;
+  });
+
+  pinGateInput?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      pinGateConfirm?.click();
+    }
+  });
+
+  pinGateConfirm?.addEventListener("click", async () => {
+    const { pinHash: stored } = await chrome.storage.local.get("pinHash");
+    if (!stored) {
+      setStatus("No PIN on file.", "error");
+      closePinGateModal();
+      return;
+    }
+    const raw = pinGateInput?.value ?? "";
+    let hash;
     try {
-      await chrome.storage.local.set({ locked: on });
-      setStatus(on ? "Locking enabled." : "Locking disabled.", "ok");
+      hash = await lockerSha256Hex(raw);
+    } catch {
+      setStatus("Could not verify PIN.", "error");
+      return;
+    }
+    if (!lockerTimingSafeEqualHex(hash, stored)) {
+      setStatus("Incorrect PIN. Locking stays on.", "error");
+      if (pinGateInput) {
+        pinGateInput.value = "";
+        pinGateInput.focus();
+      }
+      return;
+    }
+    try {
+      await chrome.storage.local.set({ locked: false });
+      if (lockCb) lockCb.checked = false;
+      closePinGateModal();
+      setStatus("Locking disabled.", "ok");
     } catch {
       setStatus("Could not update locking.", "error");
-      lockCb.checked = !on;
+      if (lockCb) lockCb.checked = true;
+      closePinGateModal();
+    }
+  });
+
+  lockCb?.addEventListener("change", async () => {
+    const wantOn = lockCb.checked;
+    if (wantOn) {
+      try {
+        await chrome.storage.local.set({ locked: true });
+        setStatus("Locking enabled.", "ok");
+      } catch {
+        setStatus("Could not update locking.", "error");
+        lockCb.checked = false;
+      }
+      return;
+    }
+    lockCb.checked = true;
+    if (!hasPin) {
+      try {
+        await chrome.storage.local.set({ locked: false });
+        lockCb.checked = false;
+        setStatus("Locking disabled.", "ok");
+      } catch {
+        setStatus("Could not update locking.", "error");
+      }
+      return;
+    }
+    setStatus("");
+    openPinGateModal();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && pinGateModal && !pinGateModal.classList.contains("hidden")) {
+      e.preventDefault();
+      closePinGateModal();
+      if (lockCb) lockCb.checked = true;
     }
   });
 
