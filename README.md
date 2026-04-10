@@ -11,6 +11,7 @@ Manifest V3 extension that shows a fullscreen PIN lock overlay on web pages. It 
   - **Lock all websites** — overlay on matching pages when locking is enabled.
   - **Domain list** — when global lock is off, only listed domains match (normalized hostnames, suffix-safe matching so `youtube.com.evil.com` does not match `youtube.com`).
 - **Master switch** — **Locking enabled** in settings. Turning it **off** when a PIN exists requires **entering the PIN** in a confirmation dialog.
+- **Unlock + reload** — After you enter the **correct PIN**, this **tab** remembers that unlock for that **site** (same origin) via `sessionStorage`, so a normal **page reload (F5)** does **not** ask for the PIN again. A **new tab** still starts locked. The lock returns after **auto-lock** (inactivity), **quick lock** (shortcut), **PIN change**, or **locking** toggled in storage.
 - **Auto-lock** — Optional inactivity timer (mouse, keyboard, scroll, touch). After a successful unlock, the timer restarts; when it fires, the overlay returns.
 - **Quick lock** — Command **Ctrl+Shift+L** (macOS: **Command+Shift+L**); may need to be set under `chrome://extensions/shortcuts`.
 - **Security hardening (best-effort)** — Context menu blocked on the lock screen; common shortcuts (e.g. Escape, refresh, close tab, devtools) are intercepted where the page allows; wrong PIN **5** times triggers a **60s** lockout; overlay is re-injected if the DOM node is removed while the page should stay locked.
