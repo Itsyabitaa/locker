@@ -40,12 +40,23 @@ Settings persist in **`chrome.storage.local`** (survives browser restart; cleari
 ```
 locker/
 ├── manifest.json
-├── src/
-│   ├── background.js      # Storage broadcast, quick-lock command
-│   ├── content.js         # Overlay, PIN check, auto-lock, hardening
-│   ├── lockEngine.js      # Domain normalize + shouldLock helpers
-│   ├── sha256.js          # Web Crypto SHA-256 + timing-safe compare
-│   └── settings-common.js # Shared validation (options)
+├── background/
+│   └── background.js       # Storage broadcast, quick-lock command (importScripts shared/constants)
+├── shared/
+│   ├── constants.js        # Storage keys, LockerEvents, limits
+│   ├── storage.js          # chrome.storage.local read helpers
+│   ├── utils.js            # PIN validation, site list parsing
+│   └── hash.js             # SHA-256 + timing-safe compare
+├── content/
+│   ├── content.js          # Orchestrator: guards, auto-lock, messages
+│   ├── engine/
+│   │   └── lockEngine.js   # Domain normalize + shouldLock (pure)
+│   ├── session/
+│   │   └── sessionManager.js
+│   └── overlay/
+│       ├── overlay.html    # Overlay markup (fetched by overlay.js)
+│       ├── overlay.css
+│       └── overlay.js      # Mount/unmount, PIN UI wiring
 ├── options/
 │   ├── options.html
 │   ├── options.css

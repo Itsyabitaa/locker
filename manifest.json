@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Locker",
-  "version": "0.7.2",
+  "version": "0.8.0",
   "description": "Lock screen overlay with PIN, settings page, auto-lock, and quick lock.",
   "permissions": ["storage", "tabs"],
   "commands": {
@@ -14,7 +14,7 @@
     }
   },
   "background": {
-    "service_worker": "src/background.js"
+    "service_worker": "background/background.js"
   },
   "action": {
     "default_title": "Locker — Open settings",
@@ -27,7 +27,17 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["src/sha256.js", "src/lockEngine.js", "src/content.js"],
+      "js": [
+        "shared/constants.js",
+        "shared/utils.js",
+        "shared/storage.js",
+        "shared/hash.js",
+        "content/engine/lockEngine.js",
+        "content/session/sessionManager.js",
+        "content/overlay/overlay.js",
+        "content/content.js"
+      ],
+      "css": ["content/overlay/overlay.css"],
       "run_at": "document_start"
     }
   ]
