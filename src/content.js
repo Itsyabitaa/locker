@@ -36,6 +36,19 @@
     const style = document.createElement("style");
     style.id = LOCK_STYLE_ID;
     style.textContent = `
+      @keyframes lockerBackdropIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes lockerPanelIn {
+        from { opacity: 0; transform: translateY(14px) scale(0.98); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #${LOCK_ROOT_ID} { animation: none !important; }
+        #${LOCK_ROOT_ID} .locker-panel { animation: none !important; }
+      }
+
       html.${LOCKED_CLASS}, body.${LOCKED_CLASS} {
         overflow: hidden !important;
         height: 100% !important;
@@ -51,85 +64,131 @@
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        background: rgba(10, 10, 12, 0.92) !important;
-        color: #fff !important;
+        padding: 20px !important;
+        animation: lockerBackdropIn 0.32s ease-out forwards !important;
+        background:
+          radial-gradient(ellipse 90% 55% at 50% -15%, rgba(120, 140, 255, 0.18), transparent 55%),
+          radial-gradient(ellipse 70% 45% at 100% 100%, rgba(80, 200, 255, 0.06), transparent 50%),
+          rgba(8, 9, 14, 0.94) !important;
+        color: #f0f2f8 !important;
         font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Liberation Sans", sans-serif !important;
         touch-action: none !important;
+        -webkit-font-smoothing: antialiased !important;
       }
 
       #${LOCK_ROOT_ID} * {
         box-sizing: border-box !important;
       }
 
-      #${LOCK_ROOT_ID} .panel {
-        width: min(420px, calc(100vw - 48px)) !important;
-        padding: 22px !important;
-        border-radius: 14px !important;
-        background: rgba(255, 255, 255, 0.08) !important;
-        border: 1px solid rgba(255, 255, 255, 0.14) !important;
+      #${LOCK_ROOT_ID} .locker-panel {
+        width: min(420px, calc(100vw - 40px)) !important;
+        padding: 28px 26px 24px !important;
+        border-radius: 16px !important;
+        animation: lockerPanelIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+        background: linear-gradient(165deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.04) 100%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        box-shadow:
+          0 0 0 1px rgba(255,255,255,0.04) inset,
+          0 24px 80px rgba(0, 0, 0, 0.55),
+          0 0 40px rgba(100, 140, 255, 0.08) !important;
         backdrop-filter: blur(10px) !important;
-        box-shadow: 0 14px 60px rgba(0, 0, 0, 0.5) !important;
+      }
+
+      #${LOCK_ROOT_ID} .locker-icon {
+        width: 52px !important;
+        height: 52px !important;
+        margin: 0 auto 14px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 14px !important;
+        background: rgba(107, 140, 255, 0.12) !important;
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35) !important;
+        color: #b8c8ff !important;
+      }
+
+      #${LOCK_ROOT_ID} .locker-icon svg {
+        width: 28px !important;
+        height: 28px !important;
       }
 
       #${LOCK_ROOT_ID} .title {
-        font-size: 20px !important;
-        font-weight: 700 !important;
-        margin: 0 0 14px 0 !important;
-        letter-spacing: 0.2px !important;
+        font-size: 1.35rem !important;
+        font-weight: 750 !important;
+        margin: 0 0 8px 0 !important;
+        letter-spacing: -0.02em !important;
+        text-align: center !important;
       }
 
       #${LOCK_ROOT_ID} .subtitle {
-        font-size: 13px !important;
+        font-size: 0.88rem !important;
         opacity: 0.85 !important;
-        margin: 0 0 16px 0 !important;
-        line-height: 1.35 !important;
+        margin: 0 0 20px 0 !important;
+        line-height: 1.45 !important;
+        text-align: center !important;
+        color: rgba(240, 242, 248, 0.88) !important;
       }
 
       #${LOCK_ROOT_ID} .row {
         display: flex !important;
         gap: 10px !important;
+        flex-wrap: wrap !important;
       }
 
       #${LOCK_ROOT_ID} input[type="password"] {
         flex: 1 !important;
-        height: 44px !important;
-        padding: 10px 12px !important;
-        border-radius: 10px !important;
-        border: 1px solid rgba(255, 255, 255, 0.22) !important;
-        background: rgba(0, 0, 0, 0.28) !important;
+        min-width: 0 !important;
+        height: 46px !important;
+        padding: 10px 14px !important;
+        border-radius: 11px !important;
+        border: 1px solid rgba(255, 255, 255, 0.16) !important;
+        background: rgba(0, 0, 0, 0.35) !important;
         color: #fff !important;
         outline: none !important;
-        font-size: 14px !important;
+        font-size: 15px !important;
         pointer-events: auto !important;
         touch-action: manipulation !important;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+      }
+
+      #${LOCK_ROOT_ID} input[type="password"]:focus {
+        border-color: rgba(107, 140, 255, 0.55) !important;
+        box-shadow: 0 0 0 3px rgba(107, 140, 255, 0.2) !important;
       }
 
       #${LOCK_ROOT_ID} input[type="password"]::placeholder {
-        color: rgba(255, 255, 255, 0.65) !important;
+        color: rgba(255, 255, 255, 0.5) !important;
       }
 
       #${LOCK_ROOT_ID} button {
-        height: 44px !important;
-        padding: 0 14px !important;
-        border-radius: 10px !important;
-        border: 1px solid rgba(255, 255, 255, 0.22) !important;
-        background: rgba(255, 255, 255, 0.14) !important;
+        height: 46px !important;
+        padding: 0 18px !important;
+        border-radius: 11px !important;
+        border: none !important;
+        background: linear-gradient(180deg, rgba(107, 140, 255, 0.95), rgba(75, 105, 210, 0.98)) !important;
         color: #fff !important;
         font-weight: 650 !important;
         cursor: pointer !important;
         pointer-events: auto !important;
         touch-action: manipulation !important;
+        box-shadow: 0 8px 24px rgba(75, 105, 210, 0.35) !important;
+        transition: filter 0.15s ease, transform 0.1s ease !important;
       }
 
       #${LOCK_ROOT_ID} button:hover {
-        background: rgba(255, 255, 255, 0.18) !important;
+        filter: brightness(1.06) !important;
+      }
+
+      #${LOCK_ROOT_ID} button:active {
+        transform: scale(0.98) !important;
       }
 
       #${LOCK_ROOT_ID} .error {
-        margin-top: 10px !important;
-        font-size: 13px !important;
-        color: #ffb3b3 !important;
+        margin-top: 12px !important;
+        font-size: 0.82rem !important;
+        color: #ffb8b8 !important;
         min-height: 18px !important;
+        text-align: center !important;
       }
     `;
     document.documentElement.appendChild(style);
@@ -228,11 +287,13 @@
       root.tabIndex = -1;
 
       const hasPin = Boolean(storedPinHash);
+      const lockIconSvg = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M7 11V8a5 5 0 0110 0v3" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><rect x="5" y="11" width="14" height="10" rx="2.25" stroke="currentColor" stroke-width="1.75"/></svg>`;
       if (hasPin) {
         root.innerHTML = `
-        <div class="panel">
-          <h1 class="title">Locked</h1>
-          <p class="subtitle">Enter your PIN to unlock this tab.</p>
+        <div class="locker-panel">
+          <div class="locker-icon">${lockIconSvg}</div>
+          <h1 class="title">Screen locked</h1>
+          <p class="subtitle">Enter your PIN to use this page.</p>
           <div class="row">
             <input id="__locker_pw__" type="password" placeholder="PIN" autocomplete="current-password" maxlength="128" />
             <button id="__locker_unlock__" type="button">Unlock</button>
@@ -242,9 +303,10 @@
       `;
       } else {
         root.innerHTML = `
-        <div class="panel">
-          <h1 class="title">Locked</h1>
-          <p class="subtitle">Set a PIN in the Locker extension popup (toolbar icon). This page updates when your PIN is saved.</p>
+        <div class="locker-panel">
+          <div class="locker-icon">${lockIconSvg}</div>
+          <h1 class="title">Screen locked</h1>
+          <p class="subtitle">Set a PIN in Locker settings: toolbar icon → Open settings. This page updates when you save.</p>
           <div id="__locker_err__" class="error"></div>
         </div>
       `;
@@ -281,7 +343,7 @@
 
       const tryUnlock = async () => {
         if (!storedPinHash) {
-          showError("No PIN saved yet. Open the Locker popup and set a PIN.");
+          showError("No PIN saved yet. Open Locker → Settings and set a PIN.");
           return;
         }
         const val = pw && "value" in pw ? String(pw.value).trim() : "";
