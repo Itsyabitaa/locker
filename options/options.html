@@ -4,19 +4,57 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Locker — Settings</title>
+    <link rel="stylesheet" href="../components/components.css" />
     <link rel="stylesheet" href="options.css" />
   </head>
   <body>
     <div class="wrap">
       <header class="header">
-        <h1>Locker</h1>
-        <p>Configure PIN, auto-lock, and where the lock screen appears.</p>
+        <h1>Browser lock settings</h1>
+        <p>Configure PIN, scope, auto-lock, and where the lock screen appears.</p>
       </header>
 
       <div class="grid">
-        <section class="card" aria-labelledby="sec-security">
+        <section class="card" id="section-general" aria-labelledby="sec-general">
+          <h2 id="sec-general">General</h2>
+          <p class="card-desc">Master locking switch and whether every site or only listed domains are affected.</p>
+
+          <label class="toggle">
+            <input id="lock-enabled" type="checkbox" checked />
+            <span class="t-text">
+              <strong>Locking enabled</strong>
+              <span>When off, no pages are blocked. Your PIN is kept. Turning this off requires your PIN if one is set.</span>
+            </span>
+          </label>
+          <p class="hint browser-limit">
+            Chrome does not allow extensions to block the “Disable” switch on <code>chrome://extensions</code>. PIN protection applies to this settings page only.
+          </p>
+
+          <label class="toggle">
+            <input id="global-lock" type="checkbox" checked />
+            <span class="t-text">
+              <strong>Lock all websites</strong>
+              <span>When off, only the domains below match (subdomains included, suffix-safe).</span>
+            </span>
+          </label>
+        </section>
+
+        <section class="card" id="section-sites" aria-labelledby="sec-sites">
+          <h2 id="sec-sites">Locked sites</h2>
+          <p class="card-desc">When global lock is off, only these domains trigger the lock screen.</p>
+
+          <label class="field-label" for="locked-sites">Domains (one per line)</label>
+          <textarea id="locked-sites" spellcheck="false" placeholder="youtube.com"></textarea>
+          <p class="hint">Example: m.youtube.com matches youtube.com. youtube.com.evil.com does not.</p>
+          <div class="row-actions">
+            <button type="button" class="btn-secondary" id="save-sites">Save site list</button>
+          </div>
+        </section>
+
+        <section class="card" id="section-security" aria-labelledby="sec-security">
           <h2 id="sec-security">Security</h2>
           <p class="card-desc">PIN is stored as SHA-256 only. Minimum length: 4 characters.</p>
+          <p class="hint lockout-hint" id="lockout-hint"></p>
 
           <div id="set-form">
             <label class="field-label" for="new-pin">New PIN</label>
@@ -49,7 +87,7 @@
           </div>
         </section>
 
-        <section class="card" aria-labelledby="sec-autolock">
+        <section class="card" id="section-autolock" aria-labelledby="sec-autolock">
           <h2 id="sec-autolock">Auto-lock</h2>
           <p class="card-desc">Re-show the lock screen after you stop interacting with the page.</p>
 
@@ -67,59 +105,37 @@
             <button type="button" class="btn-secondary" id="save-auto-lock">Save timeout</button>
           </div>
         </section>
-
-        <section class="card" aria-labelledby="sec-scope">
-          <h2 id="sec-scope">Where to lock</h2>
-          <p class="card-desc">Turn off “Lock all websites” to only lock domains you list.</p>
-
-          <label class="toggle">
-            <input id="lock-enabled" type="checkbox" checked />
-            <span class="t-text">
-              <strong>Locking enabled</strong>
-              <span>When off, no pages are blocked. Your PIN is kept. Turning this off requires your PIN if one is set.</span>
-            </span>
-          </label>
-          <p class="hint browser-limit">
-            Chrome does not allow extensions to block the “Disable” switch on <code>chrome://extensions</code>. PIN protection applies to this settings page only.
-          </p>
-
-          <label class="toggle">
-            <input id="global-lock" type="checkbox" checked />
-            <span class="t-text">
-              <strong>Lock all websites</strong>
-              <span>When off, only the domains below match (subdomains included, suffix-safe).</span>
-            </span>
-          </label>
-
-          <label class="field-label" for="locked-sites">Domains to lock (one per line)</label>
-          <textarea id="locked-sites" spellcheck="false" placeholder="youtube.com"></textarea>
-          <p class="hint">Example: m.youtube.com matches youtube.com. youtube.com.evil.com does not.</p>
-          <div class="row-actions">
-            <button type="button" class="btn-secondary" id="save-sites">Save site list</button>
-          </div>
-        </section>
       </div>
 
       <p id="status" role="status" aria-live="polite"></p>
     </div>
 
-    <div id="pin-gate-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="pin-gate-title">
-      <div class="modal-backdrop" id="pin-gate-backdrop"></div>
-      <div class="modal-box">
-        <h3 id="pin-gate-title">Enter PIN to disable locking</h3>
-        <p class="modal-desc">Locker will stop blocking pages until you enable it again.</p>
-        <label class="field-label" for="pin-gate-input">PIN</label>
-        <input id="pin-gate-input" type="password" autocomplete="current-password" maxlength="128" />
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" id="pin-gate-cancel">Cancel</button>
-          <button type="button" class="btn-primary" id="pin-gate-confirm">Disable locking</button>
-        </div>
-      </div>
-    </div>
-
     <script src="../shared/constants.js"></script>
     <script src="../shared/utils.js"></script>
     <script src="../shared/hash.js"></script>
+    <script src="../shared/storage.js"></script>
+    <script src="../components/modal.js"></script>
+    <script src="../components/button.js"></script>
+    <script src="../components/input.js"></script>
+    <script src="../components/toggle.js"></script>
+    <script src="../components/pinModal.js"></script>
+    <script src="sections/generalSettings.js"></script>
+    <script src="sections/siteManager.js"></script>
+    <script src="sections/securitySettings.js"></script>
+    <script src="sections/autoLockSettings.js"></script>
     <script src="options.js"></script>
+    <script>
+      (function () {
+        var el = document.getElementById("lockout-hint");
+        if (el) {
+          el.textContent =
+            "On web pages: wrong PIN " +
+            LockerConstants.MAX_PIN_ATTEMPTS +
+            " times → " +
+            Math.round(LockerConstants.LOCKOUT_MS / 1000) +
+            "s lockout (shown on the lock screen).";
+        }
+      })();
+    </script>
   </body>
 </html>
