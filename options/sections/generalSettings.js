@@ -9,7 +9,6 @@
 function initLockerGeneralSettings(ctx) {
   const k = LockerConstants.STORAGE_KEYS;
   const { setStatus, data } = ctx;
-  const hasPin = Boolean(data[k.PIN]);
 
   const lockCb = document.getElementById("lock-enabled");
   if (lockCb) lockCb.checked = data[k.LOCKED] !== false;
@@ -41,7 +40,9 @@ function initLockerGeneralSettings(ctx) {
       return;
     }
     lockCb.checked = true;
-    if (!hasPin) {
+    const pinSnap = await chrome.storage.local.get(k.PIN);
+    const hasPinNow = typeof pinSnap[k.PIN] === "string" && pinSnap[k.PIN].length > 0;
+    if (!hasPinNow) {
       try {
         await LockerStorage.setSettings({ [k.LOCKED]: false });
         lockCb.checked = false;
