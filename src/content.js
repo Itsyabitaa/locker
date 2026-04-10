@@ -35,7 +35,6 @@
 
   let pinFailCount = 0;
   let lockoutUntil = 0;
-  let lockoutTimerId = null;
   let lockoutUiTimerId = null;
 
   function ensureStyle() {
@@ -215,13 +214,6 @@
     }
   }
 
-  function clearLockoutTimer() {
-    if (lockoutTimerId != null) {
-      clearTimeout(lockoutTimerId);
-      lockoutTimerId = null;
-    }
-  }
-
   function removeLock() {
     clearLockoutUiTimer();
     const root = document.getElementById(LOCK_ROOT_ID);
@@ -267,6 +259,17 @@
     }
 
     if ((key === "w" || key === "W") && ctrl) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
+      return;
+    }
+
+    if (
+      ctrl &&
+      !e.shiftKey &&
+      (key === "t" || key === "T" || key === "n" || key === "N" || key === "l" || key === "L")
+    ) {
       e.preventDefault();
       e.stopPropagation();
       if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
@@ -341,7 +344,7 @@
       const active = document.activeElement;
       if (active && root.contains(active)) return;
       const pw = root.querySelector("#__locker_pw__");
-      if (pw && "focus" in pw) pw.focus();
+      if (pw && "focus" in pw && !pw.disabled) pw.focus();
     }, 500);
   }
 
@@ -445,8 +448,9 @@
           if (left <= 0) {
             stopLockoutCountdown();
             setLockedOutUi(false);
+            lockoutUntil = 0;
             showError("");
-            if (pw && "focus" in pw) pw.focus();
+            if (pw && "focus" in pw && !pw.disabled) pw.focus();
             return;
           }
           showError(`Too many attempts. Try again in ${left}s.`);
@@ -456,13 +460,8 @@
       }
 
       function enterLockout() {
-        clearLockoutTimer();
         lockoutUntil = Date.now() + LOCKOUT_MS;
         pinFailCount = 0;
-        lockoutTimerId = setTimeout(() => {
-          lockoutTimerId = null;
-          lockoutUntil = 0;
-        }, LOCKOUT_MS);
         startLockoutCountdown();
       }
 
@@ -487,7 +486,6 @@
         if (lockerTimingSafeEqualHex(hash, storedPinHash)) {
           pinFailCount = 0;
           lockoutUntil = 0;
-          clearLockoutTimer();
           stopLockoutCountdown();
           setLockedOutUi(false);
           removeLock();
