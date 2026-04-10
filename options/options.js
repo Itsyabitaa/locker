@@ -164,7 +164,7 @@ async function loadAndBind() {
   });
 
   document.getElementById("save-sites")?.addEventListener("click", async () => {
-    const lines = LockerSettingsCommon.sitesFromTextarea(sitesTa?.value);
+    const lines = LockerUtils.sitesFromTextarea(sitesTa?.value);
     try {
       await chrome.storage.local.set({ lockedSites: lines });
       setStatus("Site list saved.", "ok");
@@ -202,7 +202,7 @@ async function loadAndBind() {
     setStatus("");
     const newPin = document.getElementById("new-pin")?.value?.trim() ?? "";
     const confirm = document.getElementById("confirm-pin")?.value?.trim() ?? "";
-    const err = LockerSettingsCommon.validatePair(newPin, confirm);
+    const err = LockerUtils.validatePinPair(newPin, confirm);
     if (err) {
       setStatus(err, "error");
       return;
@@ -244,7 +244,7 @@ async function loadAndBind() {
       return;
     }
 
-    const err = LockerSettingsCommon.validatePair(newPin, confirm);
+    const err = LockerUtils.validatePinPair(newPin, confirm);
     if (err) {
       setStatus(err, "error");
       return;
