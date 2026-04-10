@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Locker",
-  "version": "0.5.0",
-  "description": "Lock screen overlay with PIN, auto-lock, and quick lock shortcut.",
+  "version": "0.6.0",
+  "description": "Lock screen overlay with PIN, settings page, auto-lock, and quick lock.",
   "permissions": ["storage", "tabs"],
   "commands": {
     "quick-lock": {
@@ -17,8 +17,12 @@
     "service_worker": "src/background.js"
   },
   "action": {
-    "default_title": "Locker — PIN & sites",
+    "default_title": "Locker — Open settings",
     "default_popup": "popup/popup.html"
+  },
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
   },
   "content_scripts": [
     {
