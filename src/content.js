@@ -2,12 +2,15 @@
   const LOCK_ROOT_ID = "__locker_root__";
   const LOCK_STYLE_ID = "__locker_style__";
   const LOCKED_CLASS = "__locker_locked__";
+  const STORAGE_KEY_PIN = "pinHash";
+  const STORAGE_KEY_LOCKED = "locked";
+
+  let storedPinHash = null;
+  /** When false, overlay is off (escape hatch). Missing from storage defaults to true. */
+  let lockingEnabled = true;
   let isLocked = false;
   let guardsAdded = false;
   let keepAliveStarted = false;
-
-  // Hardcoded Sprint 1 password (change later).
-  const PASSWORD = "1234";
 
   function ensureStyle() {
     if (document.getElementById(LOCK_STYLE_ID)) return;
@@ -122,7 +125,6 @@
   }
 
   function blockAllEvents(e) {
-    // If event is outside overlay, block it.
     if (!isLocked) return;
     const root = document.getElementById(LOCK_ROOT_ID);
     if (!root) return;
@@ -136,7 +138,6 @@
   function addGlobalGuards() {
     if (guardsAdded) return;
     guardsAdded = true;
-    // Capture-phase guards to prevent page interaction even if something goes weird.
     const opts = { capture: true, passive: false };
     window.addEventListener("click", blockAllEvents, opts);
     window.addEventListener("mousedown", blockAllEvents, opts);
@@ -150,7 +151,6 @@
     window.addEventListener(
       "keydown",
       (e) => {
-        // Allow typing in the password field, but stop page shortcuts.
         const root = document.getElementById(LOCK_ROOT_ID);
         if (!root) return;
         const active = document.activeElement;
@@ -167,14 +167,12 @@
     if (keepAliveStarted) return;
     keepAliveStarted = true;
 
-    // Re-add overlay if a SPA replaces the DOM or it gets removed.
     const observer = new MutationObserver(() => {
-      if (!isLocked) return;
+      if (!lockingEnabled || !isLocked) return;
       if (!document.getElementById(LOCK_ROOT_ID)) renderLock();
     });
     observer.observe(document.documentElement, { childList: true, subtree: true });
 
-    // Keep focus inside the lock UI so typing works reliably.
     setInterval(() => {
       if (!isLocked) return;
       const root = document.getElementById(LOCK_ROOT_ID);
@@ -187,11 +185,11 @@
   }
 
   function renderLock() {
+    if (!lockingEnabled) return;
     if (document.getElementById(LOCK_ROOT_ID)) return;
 
     ensureStyle();
 
-    // Ensure we can mount even at document_start.
     const mount = () => {
       if (document.getElementById(LOCK_ROOT_ID)) return;
       const host = document.body || document.documentElement;
@@ -210,17 +208,28 @@
       root.setAttribute("aria-modal", "true");
       root.tabIndex = -1;
 
-      root.innerHTML = `
+      const hasPin = Boolean(storedPinHash);
+      if (hasPin) {
+        root.innerHTML = `
         <div class="panel">
           <h1 class="title">Locked</h1>
-          <p class="subtitle">Enter your password to unlock this tab.</p>
+          <p class="subtitle">Enter your PIN to unlock this tab.</p>
           <div class="row">
-            <input id="__locker_pw__" type="password" placeholder="Password" autocomplete="current-password" />
+            <input id="__locker_pw__" type="password" placeholder="PIN" autocomplete="current-password" maxlength="128" />
             <button id="__locker_unlock__" type="button">Unlock</button>
           </div>
           <div id="__locker_err__" class="error"></div>
         </div>
       `;
+      } else {
+        root.innerHTML = `
+        <div class="panel">
+          <h1 class="title">Locked</h1>
+          <p class="subtitle">Set a PIN in the Locker extension popup (toolbar icon). This page updates when your PIN is saved.</p>
+          <div id="__locker_err__" class="error"></div>
+        </div>
+      `;
+      }
 
       host.appendChild(root);
 
@@ -228,10 +237,6 @@
       const btn = root.querySelector("#__locker_unlock__");
       const err = root.querySelector("#__locker_err__");
 
-      // Keep page scripts from intercepting overlay interactions.
-      // (Some sites attach aggressive capture-phase listeners on window/document.)
-      // Do not stop when the event target is inside the overlay: capture-phase runs
-      // before children, so stopImmediatePropagation would block the button/input.
       const stopLeak = (e) => {
         const t = e.target;
         if (t instanceof Node && root.contains(t)) return;
@@ -255,24 +260,35 @@
         if (err) err.textContent = msg;
       };
 
-      const tryUnlock = () => {
+      const tryUnlock = async () => {
+        if (!storedPinHash) {
+          showError("No PIN saved yet. Open the Locker popup and set a PIN.");
+          return;
+        }
         const val = pw && "value" in pw ? String(pw.value).trim() : "";
-        if (val === PASSWORD) {
+        let hash;
+        try {
+          hash = await lockerSha256Hex(val);
+        } catch {
+          showError("Could not verify PIN.");
+          return;
+        }
+        if (lockerTimingSafeEqualHex(hash, storedPinHash)) {
           removeLock();
           showError("");
         } else {
-          showError("Incorrect password.");
+          showError("Incorrect PIN.");
           if (pw && "focus" in pw) pw.focus();
           if (pw && "select" in pw) pw.select();
         }
       };
 
-      if (btn) btn.addEventListener("click", tryUnlock);
+      if (btn) btn.addEventListener("click", () => void tryUnlock());
       if (pw) {
         pw.addEventListener("keydown", (e) => {
           if (e.key === "Enter") {
             e.preventDefault();
-            tryUnlock();
+            void tryUnlock();
           }
         });
         pw.focus();
@@ -284,7 +300,36 @@
     mount();
   }
 
-  // Sprint 1: hardcode lock on load.
-  startKeepAlive();
-  renderLock();
+  async function init() {
+    const data = await chrome.storage.local.get([STORAGE_KEY_PIN, STORAGE_KEY_LOCKED]);
+    storedPinHash = typeof data[STORAGE_KEY_PIN] === "string" ? data[STORAGE_KEY_PIN] : null;
+    lockingEnabled = data[STORAGE_KEY_LOCKED] !== false;
+
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== "local") return;
+      const pinCh = changes[STORAGE_KEY_PIN];
+      const lockedCh = changes[STORAGE_KEY_LOCKED];
+      if (!pinCh && !lockedCh) return;
+
+      if (pinCh) {
+        storedPinHash =
+          pinCh.newValue != null && typeof pinCh.newValue === "string" ? pinCh.newValue : null;
+      }
+      if (lockedCh) {
+        lockingEnabled = lockedCh.newValue !== false;
+      }
+
+      if (!lockingEnabled) {
+        removeLock();
+        return;
+      }
+      if (document.getElementById(LOCK_ROOT_ID)) removeLock();
+      renderLock();
+    });
+
+    startKeepAlive();
+    if (lockingEnabled) renderLock();
+  }
+
+  init();
 })();
