@@ -11,6 +11,8 @@
   const STORAGE_KEY_QUICK_LOCK = "quickLockAt";
   const DEFAULT_INACTIVITY_MIN = 2;
   const ACTIVITY_THROTTLE_MS = 500;
+  const MAX_PIN_ATTEMPTS = 5;
+  const LOCKOUT_MS = 60 * 1000;
 
   let storedPinHash = null;
   /** Master switch from popup; false = never show overlay. */
@@ -30,6 +32,11 @@
   let inactivityTimerId = null;
   let activityListenersBound = false;
   let lastActivityThrottleAt = 0;
+
+  let pinFailCount = 0;
+  let lockoutUntil = 0;
+  let lockoutTimerId = null;
+  let lockoutUiTimerId = null;
 
   function ensureStyle() {
     if (document.getElementById(LOCK_STYLE_ID)) return;
@@ -190,11 +197,33 @@
         min-height: 18px !important;
         text-align: center !important;
       }
+
+      #${LOCK_ROOT_ID} input:disabled,
+      #${LOCK_ROOT_ID} button:disabled {
+        opacity: 0.55 !important;
+        cursor: not-allowed !important;
+        pointer-events: none !important;
+      }
     `;
     document.documentElement.appendChild(style);
   }
 
+  function clearLockoutUiTimer() {
+    if (lockoutUiTimerId != null) {
+      clearInterval(lockoutUiTimerId);
+      lockoutUiTimerId = null;
+    }
+  }
+
+  function clearLockoutTimer() {
+    if (lockoutTimerId != null) {
+      clearTimeout(lockoutTimerId);
+      lockoutTimerId = null;
+    }
+  }
+
   function removeLock() {
+    clearLockoutUiTimer();
     const root = document.getElementById(LOCK_ROOT_ID);
     if (root) root.remove();
     document.documentElement.classList.remove(LOCKED_CLASS);
@@ -213,6 +242,62 @@
     if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
   }
 
+  function blockContextMenuWhileLocked(e) {
+    if (!lastLockDecision) return;
+    if (!document.getElementById(LOCK_ROOT_ID)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
+  }
+
+  function onLockdownKeydown(e) {
+    const root = document.getElementById(LOCK_ROOT_ID);
+    if (!root) return;
+
+    const active = document.activeElement;
+    const inOverlay = active instanceof Node && root.contains(active);
+    const ctrl = e.ctrlKey || e.metaKey;
+    const key = e.key;
+
+    if (key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
+      return;
+    }
+
+    if ((key === "w" || key === "W") && ctrl) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
+      return;
+    }
+
+    if (key === "F5" || (key === "r" && ctrl && !e.shiftKey) || (key === "R" && ctrl && e.shiftKey)) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
+      return;
+    }
+
+    if (
+      key === "F12" ||
+      (ctrl && e.shiftKey && (key === "I" || key === "J" || key === "C" || key === "K")) ||
+      (ctrl && (key === "u" || key === "U") && !e.shiftKey)
+    ) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
+      return;
+    }
+
+    if (!inOverlay) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
+    }
+  }
+
   function addGlobalGuards() {
     if (guardsAdded) return;
     guardsAdded = true;
@@ -225,20 +310,8 @@
     window.addEventListener("touchstart", blockAllEvents, opts);
     window.addEventListener("touchmove", blockAllEvents, opts);
     window.addEventListener("wheel", blockAllEvents, opts);
-    window.addEventListener("contextmenu", blockAllEvents, opts);
-    window.addEventListener(
-      "keydown",
-      (e) => {
-        const root = document.getElementById(LOCK_ROOT_ID);
-        if (!root) return;
-        const active = document.activeElement;
-        if (active && root.contains(active)) return;
-        e.preventDefault();
-        e.stopPropagation();
-        if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
-      },
-      opts
-    );
+    window.addEventListener("contextmenu", blockContextMenuWhileLocked, opts);
+    window.addEventListener("keydown", onLockdownKeydown, opts);
   }
 
   function startKeepAlive() {
@@ -246,10 +319,20 @@
     keepAliveStarted = true;
 
     const observer = new MutationObserver(() => {
-      if (!lastLockDecision || !isLocked) return;
-      if (!document.getElementById(LOCK_ROOT_ID)) renderLock();
+      if (!lastLockDecision) return;
+      if (!document.getElementById(LOCK_ROOT_ID)) {
+        if (!isLocked) return;
+        renderLock();
+      }
     });
     observer.observe(document.documentElement, { childList: true, subtree: true });
+
+    setInterval(() => {
+      if (!lastLockDecision) return;
+      if (document.getElementById(LOCK_ROOT_ID)) return;
+      if (!isLocked) return;
+      renderLock();
+    }, 400);
 
     setInterval(() => {
       if (!isLocked) return;
@@ -341,9 +424,56 @@
         if (err) err.textContent = msg;
       };
 
+      function setLockedOutUi(disabled) {
+        if (pw && "disabled" in pw) pw.disabled = Boolean(disabled);
+        if (btn && "disabled" in btn) btn.disabled = Boolean(disabled);
+      }
+
+      function stopLockoutCountdown() {
+        clearLockoutUiTimer();
+      }
+
+      function startLockoutCountdown() {
+        stopLockoutCountdown();
+        setLockedOutUi(true);
+        const tick = () => {
+          if (!document.getElementById(LOCK_ROOT_ID)) {
+            stopLockoutCountdown();
+            return;
+          }
+          const left = Math.ceil((lockoutUntil - Date.now()) / 1000);
+          if (left <= 0) {
+            stopLockoutCountdown();
+            setLockedOutUi(false);
+            showError("");
+            if (pw && "focus" in pw) pw.focus();
+            return;
+          }
+          showError(`Too many attempts. Try again in ${left}s.`);
+        };
+        tick();
+        lockoutUiTimerId = setInterval(tick, 1000);
+      }
+
+      function enterLockout() {
+        clearLockoutTimer();
+        lockoutUntil = Date.now() + LOCKOUT_MS;
+        pinFailCount = 0;
+        lockoutTimerId = setTimeout(() => {
+          lockoutTimerId = null;
+          lockoutUntil = 0;
+        }, LOCKOUT_MS);
+        startLockoutCountdown();
+      }
+
       const tryUnlock = async () => {
         if (!storedPinHash) {
           showError("No PIN saved yet. Open Locker → Settings and set a PIN.");
+          return;
+        }
+        if (Date.now() < lockoutUntil) {
+          const left = Math.ceil((lockoutUntil - Date.now()) / 1000);
+          showError(`Too many attempts. Try again in ${left}s.`);
           return;
         }
         const val = pw && "value" in pw ? String(pw.value).trim() : "";
@@ -355,15 +485,29 @@
           return;
         }
         if (lockerTimingSafeEqualHex(hash, storedPinHash)) {
+          pinFailCount = 0;
+          lockoutUntil = 0;
+          clearLockoutTimer();
+          stopLockoutCountdown();
+          setLockedOutUi(false);
           removeLock();
           showError("");
           startOrRestartInactivityTimer();
         } else {
-          showError("Incorrect PIN.");
-          if (pw && "focus" in pw) pw.focus();
-          if (pw && "select" in pw) pw.select();
+          pinFailCount += 1;
+          if (pinFailCount >= MAX_PIN_ATTEMPTS) {
+            enterLockout();
+          } else {
+            showError(`Incorrect PIN. (${pinFailCount}/${MAX_PIN_ATTEMPTS})`);
+            if (pw && "focus" in pw) pw.focus();
+            if (pw && "select" in pw) pw.select();
+          }
         }
       };
+
+      if (Date.now() < lockoutUntil) {
+        startLockoutCountdown();
+      }
 
       if (btn) btn.addEventListener("click", () => void tryUnlock());
       if (pw) {
@@ -373,7 +517,7 @@
             void tryUnlock();
           }
         });
-        pw.focus();
+        if (!(Date.now() < lockoutUntil)) pw.focus();
       }
 
       addGlobalGuards();
