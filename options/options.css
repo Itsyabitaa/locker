@@ -1,0 +1,241 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #0c0d12;
+  --surface: #16181f;
+  --surface-2: #1c1f28;
+  --border: rgba(255, 255, 255, 0.08);
+  --text: #e9eaf0;
+  --muted: rgba(233, 234, 240, 0.65);
+  --accent: #6b8cff;
+  --accent-dim: rgba(107, 140, 255, 0.2);
+  --danger: #f08080;
+  --ok: #8fd96b;
+  --radius: 12px;
+  --shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text);
+  background: radial-gradient(1200px 600px at 10% -10%, rgba(107, 140, 255, 0.12), transparent),
+    radial-gradient(800px 400px at 100% 0%, rgba(120, 200, 255, 0.06), transparent), var(--bg);
+  line-height: 1.45;
+}
+
+.wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 28px 20px 48px;
+}
+
+.header {
+  margin-bottom: 28px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.header p {
+  margin: 6px 0 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px 22px 20px;
+  box-shadow: var(--shadow);
+}
+
+.card h2 {
+  margin: 0 0 6px 0;
+  font-size: 1.05rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
+.card-desc {
+  margin: 0 0 18px 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+label.field-label {
+  display: block;
+  margin: 14px 0 6px 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+label.field-label:first-of-type {
+  margin-top: 0;
+}
+
+input[type="password"],
+input[type="number"],
+textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+textarea {
+  min-height: 120px;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+}
+
+input:focus,
+textarea:focus {
+  outline: 2px solid rgba(107, 140, 255, 0.45);
+  outline-offset: 0;
+}
+
+.toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 16px 0;
+  padding: 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.toggle:first-of-type {
+  margin-top: 0;
+}
+
+.toggle input {
+  margin-top: 3px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+.toggle .t-text {
+  flex: 1;
+}
+
+.toggle .t-text strong {
+  display: block;
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+
+.toggle .t-text span {
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+button {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 650;
+  border-radius: 10px;
+  padding: 10px 18px;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+.btn-primary {
+  background: linear-gradient(180deg, rgba(107, 140, 255, 0.95), rgba(80, 110, 220, 0.95));
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(80, 110, 220, 0.35);
+}
+
+.btn-primary:hover {
+  filter: brightness(1.06);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.hint {
+  margin: 8px 0 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+#status {
+  margin-top: 20px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  min-height: 20px;
+}
+
+#status.error {
+  background: rgba(240, 128, 128, 0.12);
+  color: #ffc4c4;
+  border: 1px solid rgba(240, 128, 128, 0.25);
+}
+
+#status.ok {
+  background: rgba(143, 217, 107, 0.1);
+  color: #b8e6a0;
+  border: 1px solid rgba(143, 217, 107, 0.22);
+}
+
+.hidden {
+  display: none !important;
+}
+
+@media (min-width: 560px) {
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 16px;
+  }
+
+  .two-col .full {
+    grid-column: 1 / -1;
+  }
+}
