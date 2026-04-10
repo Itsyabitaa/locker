@@ -2,71 +2,30 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Locker PIN</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Locker</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <h1>Locker</h1>
-    <div class="toggle-row">
-      <label class="toggle-label">
-        <input id="lock-enabled" type="checkbox" checked />
-        <span>Locking enabled</span>
-      </label>
-      <p class="toggle-hint">When off, pages are not blocked. PIN is kept.</p>
+    <div class="popup-wrap">
+      <div class="popup-brand" aria-hidden="true">
+        <svg class="popup-logo" width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M7 11V8a5 5 0 0110 0v3" stroke="url(#g1)" stroke-width="1.75" stroke-linecap="round"/>
+          <rect x="5" y="11" width="14" height="10" rx="2.25" stroke="url(#g1)" stroke-width="1.75"/>
+          <defs>
+            <linearGradient id="g1" x1="5" y1="5" x2="21" y2="19" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#9db4ff"/>
+              <stop offset="1" stop-color="#6b8cff"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <h1 class="popup-title">Locker</h1>
+      <p class="popup-lead">PIN-protected lock screen for your tabs.</p>
+      <button type="button" class="btn-open" id="open-settings">Open settings</button>
+      <p class="popup-hint">Change PIN, auto-lock, and domains in the full settings page.</p>
+      <p class="popup-kbd">Quick lock: <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd></p>
     </div>
-
-    <div class="toggle-row">
-      <label class="toggle-label">
-        <input id="global-lock" type="checkbox" checked />
-        <span>Lock all websites</span>
-      </label>
-      <p class="toggle-hint">When off, only domains in the list below are locked (subdomains included).</p>
-    </div>
-
-    <label for="locked-sites">Lock only these domains</label>
-    <textarea
-      id="locked-sites"
-      rows="5"
-      spellcheck="false"
-      placeholder="youtube.com"
-    ></textarea>
-    <p class="field-hint">One domain per line. Matching is suffix-safe (e.g. m.youtube.com matches youtube.com; fake youtube.com.evil.com does not).</p>
-    <button id="save-sites" type="button" class="btn-secondary">Save site list</button>
-
-    <div class="toggle-row">
-      <label class="toggle-label">
-        <input id="auto-lock-enabled" type="checkbox" checked />
-        <span>Auto-lock after inactivity</span>
-      </label>
-      <p class="toggle-hint">Re-shows the lock screen if you stop using the page (mouse, keys, scroll).</p>
-    </div>
-    <label for="inactivity-min">Inactivity minutes</label>
-    <input id="inactivity-min" type="number" min="1" max="1440" value="2" step="1" />
-    <button id="save-auto-lock" type="button" class="btn-secondary">Save inactivity time</button>
-
-    <p class="hint">PIN is stored as SHA-256 only. Minimum length: 4 characters.</p>
-
-    <div id="set-form">
-      <label for="new-pin">New PIN</label>
-      <input id="new-pin" type="password" autocomplete="new-password" maxlength="128" />
-      <label for="confirm-pin">Confirm PIN</label>
-      <input id="confirm-pin" type="password" autocomplete="new-password" maxlength="128" />
-      <button id="save-set" type="button">Save PIN</button>
-    </div>
-
-    <div id="change-form" class="hidden">
-      <label for="old-pin">Current PIN</label>
-      <input id="old-pin" type="password" autocomplete="current-password" maxlength="128" />
-      <label for="new-pin-ch">New PIN</label>
-      <input id="new-pin-ch" type="password" autocomplete="new-password" maxlength="128" />
-      <label for="confirm-pin-ch">Confirm new PIN</label>
-      <input id="confirm-pin-ch" type="password" autocomplete="new-password" maxlength="128" />
-      <button id="save-change" type="button">Change PIN</button>
-    </div>
-
-    <p id="status" aria-live="polite"></p>
-
-    <script src="../src/sha256.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>
