@@ -1,12 +1,17 @@
 {
   "manifest_version": 3,
-  "name": "Locker (Sprint 1)",
-  "version": "0.1.0",
-  "description": "Basic lock screen overlay injected into all pages.",
+  "name": "Locker",
+  "version": "0.3.0",
+  "description": "Lock screen overlay with PIN (SHA-256, chrome.storage).",
+  "permissions": ["storage"],
+  "action": {
+    "default_title": "Locker — PIN setup",
+    "default_popup": "popup/popup.html"
+  },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["src/content.js"],
+      "js": ["src/sha256.js", "src/content.js"],
       "run_at": "document_start"
     }
   ]
