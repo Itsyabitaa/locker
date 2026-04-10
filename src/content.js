@@ -230,7 +230,11 @@
 
       // Keep page scripts from intercepting overlay interactions.
       // (Some sites attach aggressive capture-phase listeners on window/document.)
+      // Do not stop when the event target is inside the overlay: capture-phase runs
+      // before children, so stopImmediatePropagation would block the button/input.
       const stopLeak = (e) => {
+        const t = e.target;
+        if (t instanceof Node && root.contains(t)) return;
         e.stopPropagation();
         if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
       };
@@ -252,7 +256,7 @@
       };
 
       const tryUnlock = () => {
-        const val = pw && "value" in pw ? String(pw.value) : "";
+        const val = pw && "value" in pw ? String(pw.value).trim() : "";
         if (val === PASSWORD) {
           removeLock();
           showError("");
