@@ -24,12 +24,15 @@ function sitesArrayFromTextarea(text) {
 }
 
 async function init() {
-  const { pinHash, locked, globalLock, lockedSites } = await chrome.storage.local.get([
-    "pinHash",
-    "locked",
-    "globalLock",
-    "lockedSites",
-  ]);
+  const { pinHash, locked, globalLock, lockedSites, autoLockEnabled, inactivityMinutes } =
+    await chrome.storage.local.get([
+      "pinHash",
+      "locked",
+      "globalLock",
+      "lockedSites",
+      "autoLockEnabled",
+      "inactivityMinutes",
+    ]);
   const hasPin = Boolean(pinHash);
   const lockingEnabled = locked !== false;
   const globalOn = globalLock !== false;
@@ -43,6 +46,17 @@ async function init() {
   const sitesTa = document.getElementById("locked-sites");
   if (sitesTa) {
     sitesTa.value = Array.isArray(lockedSites) ? lockedSites.join("\n") : "";
+  }
+
+  const autoLockCb = document.getElementById("auto-lock-enabled");
+  if (autoLockCb) autoLockCb.checked = autoLockEnabled !== false;
+
+  const inactivityMinEl = document.getElementById("inactivity-min");
+  if (inactivityMinEl) {
+    const m = Number(inactivityMinutes);
+    inactivityMinEl.value = String(
+      Number.isFinite(m) && m > 0 ? Math.min(m, 24 * 60) : 2
+    );
   }
 
   lockCb?.addEventListener("change", async () => {
@@ -74,6 +88,31 @@ async function init() {
       setStatus("Site list saved.", "ok");
     } catch {
       setStatus("Could not save site list.", "error");
+    }
+  });
+
+  autoLockCb?.addEventListener("change", async () => {
+    const on = autoLockCb.checked;
+    try {
+      await chrome.storage.local.set({ autoLockEnabled: on });
+      setStatus(on ? "Auto-lock on." : "Auto-lock off.", "ok");
+    } catch {
+      setStatus("Could not update auto-lock.", "error");
+      autoLockCb.checked = !on;
+    }
+  });
+
+  document.getElementById("save-auto-lock")?.addEventListener("click", async () => {
+    const n = Number(inactivityMinEl?.value);
+    if (!Number.isFinite(n) || n < 1) {
+      setStatus("Enter a valid number of minutes (1+).", "error");
+      return;
+    }
+    try {
+      await chrome.storage.local.set({ inactivityMinutes: Math.min(Math.floor(n), 24 * 60) });
+      setStatus("Inactivity time saved.", "ok");
+    } catch {
+      setStatus("Could not save inactivity time.", "error");
     }
   });
 

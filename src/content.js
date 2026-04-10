@@ -6,6 +6,11 @@
   const STORAGE_KEY_LOCKED = "locked";
   const STORAGE_KEY_GLOBAL_LOCK = "globalLock";
   const STORAGE_KEY_LOCKED_SITES = "lockedSites";
+  const STORAGE_KEY_AUTO_LOCK = "autoLockEnabled";
+  const STORAGE_KEY_INACTIVITY_MIN = "inactivityMinutes";
+  const STORAGE_KEY_QUICK_LOCK = "quickLockAt";
+  const DEFAULT_INACTIVITY_MIN = 2;
+  const ACTIVITY_THROTTLE_MS = 500;
 
   let storedPinHash = null;
   /** Master switch from popup; false = never show overlay. */
@@ -19,6 +24,12 @@
   let isLocked = false;
   let guardsAdded = false;
   let keepAliveStarted = false;
+
+  let autoLockEnabled = true;
+  let inactivityMs = DEFAULT_INACTIVITY_MIN * 60 * 1000;
+  let inactivityTimerId = null;
+  let activityListenersBound = false;
+  let lastActivityThrottleAt = 0;
 
   function ensureStyle() {
     if (document.getElementById(LOCK_STYLE_ID)) return;
@@ -284,6 +295,7 @@
         if (lockerTimingSafeEqualHex(hash, storedPinHash)) {
           removeLock();
           showError("");
+          startOrRestartInactivityTimer();
         } else {
           showError("Incorrect PIN.");
           if (pw && "focus" in pw) pw.focus();
@@ -308,6 +320,56 @@
     mount();
   }
 
+  function clearInactivityTimer() {
+    if (inactivityTimerId != null) {
+      clearTimeout(inactivityTimerId);
+      inactivityTimerId = null;
+    }
+  }
+
+  function forceShowLockOverlay() {
+    if (!lastLockDecision) return;
+    if (document.getElementById(LOCK_ROOT_ID)) {
+      startOrRestartInactivityTimer();
+      return;
+    }
+    renderLock();
+    startOrRestartInactivityTimer();
+  }
+
+  function startOrRestartInactivityTimer() {
+    clearInactivityTimer();
+    if (!autoLockEnabled || !lastLockDecision) return;
+    inactivityTimerId = setTimeout(() => {
+      inactivityTimerId = null;
+      forceShowLockOverlay();
+    }, inactivityMs);
+  }
+
+  function onUserActivity() {
+    const now = Date.now();
+    if (now - lastActivityThrottleAt < ACTIVITY_THROTTLE_MS) return;
+    lastActivityThrottleAt = now;
+    startOrRestartInactivityTimer();
+  }
+
+  function bindActivityListeners() {
+    if (activityListenersBound) return;
+    activityListenersBound = true;
+    const opts = { capture: true, passive: true };
+    for (const ev of [
+      "mousemove",
+      "mousedown",
+      "keydown",
+      "scroll",
+      "touchstart",
+      "wheel",
+      "pointerdown",
+    ]) {
+      window.addEventListener(ev, onUserActivity, opts);
+    }
+  }
+
   function applyStorageSnapshot(data) {
     storedPinHash =
       typeof data[STORAGE_KEY_PIN] === "string" ? data[STORAGE_KEY_PIN] : null;
@@ -316,6 +378,13 @@
     let sitesRaw = data[STORAGE_KEY_LOCKED_SITES];
     if (!Array.isArray(sitesRaw)) sitesRaw = [];
     lockedSitesNormalized = lockerNormalizeLockedSitesList(sitesRaw);
+    autoLockEnabled = data[STORAGE_KEY_AUTO_LOCK] !== false;
+    const minRaw = Number(data[STORAGE_KEY_INACTIVITY_MIN]);
+    const min =
+      Number.isFinite(minRaw) && minRaw > 0
+        ? Math.min(Math.max(minRaw, 1), 24 * 60)
+        : DEFAULT_INACTIVITY_MIN;
+    inactivityMs = min * 60 * 1000;
   }
 
   async function checkLockCondition() {
@@ -324,6 +393,8 @@
       STORAGE_KEY_LOCKED,
       STORAGE_KEY_GLOBAL_LOCK,
       STORAGE_KEY_LOCKED_SITES,
+      STORAGE_KEY_AUTO_LOCK,
+      STORAGE_KEY_INACTIVITY_MIN,
     ]);
     applyStorageSnapshot(data);
 
@@ -337,20 +408,28 @@
 
     if (!lastLockDecision) {
       removeLock();
+      clearInactivityTimer();
       return;
     }
     if (document.getElementById(LOCK_ROOT_ID)) removeLock();
     renderLock();
+    bindActivityListeners();
+    startOrRestartInactivityTimer();
   }
 
   function init() {
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area !== "local") return;
+      if (changes[STORAGE_KEY_QUICK_LOCK]) {
+        forceShowLockOverlay();
+      }
       const keys = [
         STORAGE_KEY_PIN,
         STORAGE_KEY_LOCKED,
         STORAGE_KEY_GLOBAL_LOCK,
         STORAGE_KEY_LOCKED_SITES,
+        STORAGE_KEY_AUTO_LOCK,
+        STORAGE_KEY_INACTIVITY_MIN,
       ];
       if (!keys.some((k) => changes[k])) return;
       void checkLockCondition();
@@ -362,6 +441,11 @@
           .then(() => sendResponse({ ok: true }))
           .catch(() => sendResponse({ ok: false }));
         return true;
+      }
+      if (msg && msg.action === "FORCE_LOCK") {
+        forceShowLockOverlay();
+        sendResponse({ ok: true });
+        return false;
       }
       return undefined;
     });

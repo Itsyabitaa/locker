@@ -1,9 +1,18 @@
 {
   "manifest_version": 3,
   "name": "Locker",
-  "version": "0.4.0",
-  "description": "Lock screen overlay with PIN, global or per-domain lock.",
+  "version": "0.5.0",
+  "description": "Lock screen overlay with PIN, auto-lock, and quick lock shortcut.",
   "permissions": ["storage", "tabs"],
+  "commands": {
+    "quick-lock": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+L",
+        "mac": "Command+Shift+L"
+      },
+      "description": "Lock immediately (all tabs)"
+    }
+  },
   "background": {
     "service_worker": "src/background.js"
   },
