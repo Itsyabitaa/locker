@@ -10,22 +10,34 @@
     <div class="popup-wrap">
       <div class="popup-brand" aria-hidden="true">
         <svg class="popup-logo" width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M7 11V8a5 5 0 0110 0v3" stroke="url(#g1)" stroke-width="1.75" stroke-linecap="round"/>
-          <rect x="5" y="11" width="14" height="10" rx="2.25" stroke="url(#g1)" stroke-width="1.75"/>
+          <path d="M7 11V8a5 5 0 0110 0v3" stroke="url(#g1)" stroke-width="1.75" stroke-linecap="round" />
+          <rect x="5" y="11" width="14" height="10" rx="2.25" stroke="url(#g1)" stroke-width="1.75" />
           <defs>
             <linearGradient id="g1" x1="5" y1="5" x2="21" y2="19" gradientUnits="userSpaceOnUse">
-              <stop stop-color="#9db4ff"/>
-              <stop offset="1" stop-color="#6b8cff"/>
+              <stop stop-color="#9db4ff" />
+              <stop offset="1" stop-color="#6b8cff" />
             </linearGradient>
           </defs>
         </svg>
       </div>
       <h1 class="popup-title">Locker</h1>
-      <p class="popup-lead">PIN-protected lock screen for your tabs.</p>
-      <button type="button" class="btn-open" id="open-settings">Open settings</button>
-      <p class="popup-hint">Change PIN, auto-lock, and domains in the full settings page.</p>
+      <p class="popup-lead">Quick control panel. PIN and storage live in Settings.</p>
+
+      <div class="popup-status" id="popup-status" role="status" aria-live="polite">
+        <span class="popup-status-dot" id="popup-status-dot" aria-hidden="true"></span>
+        <span id="popup-status-text">Loading…</span>
+      </div>
+
+      <div class="popup-actions">
+        <button type="button" class="popup-btn popup-btn-primary" id="btn-lock-now">Lock</button>
+        <button type="button" class="popup-btn popup-btn-secondary" id="btn-unlock">Unlock</button>
+      </div>
+      <p class="popup-actions-hint">Unlock opens Settings (disable locking, change PIN). To unlock a tab, enter your PIN on the page.</p>
+
+      <button type="button" class="btn-open" id="open-settings">Open full settings</button>
       <p class="popup-kbd">Quick lock: <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd></p>
     </div>
+    <script src="../shared/constants.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>

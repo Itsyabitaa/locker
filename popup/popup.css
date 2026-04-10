@@ -38,10 +38,90 @@ body {
 }
 
 .popup-lead {
-  margin: 8px 0 16px;
+  margin: 8px 0 14px;
   font-size: 0.82rem;
   line-height: 1.45;
   color: rgba(232, 232, 237, 0.72);
+}
+
+.popup-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: left;
+}
+
+.popup-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.popup-status-dot.on {
+  background: #6b8cff;
+  box-shadow: 0 0 10px rgba(107, 140, 255, 0.6);
+}
+
+.popup-status-dot.off {
+  background: rgba(143, 217, 107, 0.85);
+}
+
+.popup-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.popup-btn {
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 650;
+  border: none;
+  transition: filter 0.15s ease, transform 0.1s ease;
+}
+
+.popup-btn:active {
+  transform: scale(0.98);
+}
+
+.popup-btn-primary {
+  color: #fff;
+  background: linear-gradient(180deg, rgba(107, 140, 255, 0.95), rgba(75, 105, 210, 0.98));
+  box-shadow: 0 6px 18px rgba(75, 105, 210, 0.35);
+}
+
+.popup-btn-primary:hover {
+  filter: brightness(1.06);
+}
+
+.popup-btn-secondary {
+  color: #e8e8ed;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.popup-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.popup-actions-hint {
+  margin: 0 0 14px;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  color: rgba(232, 232, 237, 0.5);
 }
 
 .btn-open {
@@ -52,25 +132,18 @@ body {
   cursor: pointer;
   font: inherit;
   font-weight: 650;
-  color: #fff;
-  background: linear-gradient(180deg, rgba(107, 140, 255, 0.95), rgba(75, 105, 210, 0.98));
-  box-shadow: 0 6px 20px rgba(75, 105, 210, 0.35);
-  transition: filter 0.15s ease, transform 0.1s ease;
+  color: rgba(232, 232, 237, 0.95);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: background 0.15s ease, transform 0.1s ease;
 }
 
 .btn-open:hover {
-  filter: brightness(1.06);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .btn-open:active {
   transform: scale(0.98);
-}
-
-.popup-hint {
-  margin: 14px 0 0;
-  font-size: 0.75rem;
-  line-height: 1.4;
-  color: rgba(232, 232, 237, 0.55);
 }
 
 .popup-kbd {
