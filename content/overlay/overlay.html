@@ -1,0 +1,29 @@
+<div id="__locker_root__" class="locker-backdrop">
+  <div class="locker-panel">
+    <div class="locker-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M7 11V8a5 5 0 0110 0v3"
+          stroke="currentColor"
+          stroke-width="1.75"
+          stroke-linecap="round"
+        />
+        <rect x="5" y="11" width="14" height="10" rx="2.25" stroke="currentColor" stroke-width="1.75" />
+      </svg>
+    </div>
+    <h1 class="title">Screen locked</h1>
+    <p class="subtitle locker-sub-pin">Enter your PIN to use this page.</p>
+    <p class="subtitle locker-sub-nopin hidden">Set a PIN in Locker settings: toolbar icon → Open settings. This page updates when you save.</p>
+    <div class="locker-pin-row row">
+      <input
+        id="__locker_pw__"
+        type="password"
+        placeholder="PIN"
+        autocomplete="current-password"
+        maxlength="128"
+      />
+      <button id="__locker_unlock__" type="button">Unlock</button>
+    </div>
+    <div id="__locker_err__" class="error"></div>
+  </div>
+</div>
