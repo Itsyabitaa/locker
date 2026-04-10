@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Locker PIN</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <h1>Locker</h1>
+    <div class="toggle-row">
+      <label class="toggle-label">
+        <input id="lock-enabled" type="checkbox" checked />
+        <span>Locking enabled</span>
+      </label>
+      <p class="toggle-hint">When off, pages are not blocked. PIN is kept.</p>
+    </div>
+    <p class="hint">PIN is stored as SHA-256 only. Minimum length: 4 characters.</p>
+
+    <div id="set-form">
+      <label for="new-pin">New PIN</label>
+      <input id="new-pin" type="password" autocomplete="new-password" maxlength="128" />
+      <label for="confirm-pin">Confirm PIN</label>
+      <input id="confirm-pin" type="password" autocomplete="new-password" maxlength="128" />
+      <button id="save-set" type="button">Save PIN</button>
+    </div>
+
+    <div id="change-form" class="hidden">
+      <label for="old-pin">Current PIN</label>
+      <input id="old-pin" type="password" autocomplete="current-password" maxlength="128" />
+      <label for="new-pin-ch">New PIN</label>
+      <input id="new-pin-ch" type="password" autocomplete="new-password" maxlength="128" />
+      <label for="confirm-pin-ch">Confirm new PIN</label>
+      <input id="confirm-pin-ch" type="password" autocomplete="new-password" maxlength="128" />
+      <button id="save-change" type="button">Change PIN</button>
+    </div>
+
+    <p id="status" aria-live="polite"></p>
+
+    <script src="../src/sha256.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>
