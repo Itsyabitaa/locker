@@ -14,6 +14,25 @@
       </label>
       <p class="toggle-hint">When off, pages are not blocked. PIN is kept.</p>
     </div>
+
+    <div class="toggle-row">
+      <label class="toggle-label">
+        <input id="global-lock" type="checkbox" checked />
+        <span>Lock all websites</span>
+      </label>
+      <p class="toggle-hint">When off, only domains in the list below are locked (subdomains included).</p>
+    </div>
+
+    <label for="locked-sites">Lock only these domains</label>
+    <textarea
+      id="locked-sites"
+      rows="5"
+      spellcheck="false"
+      placeholder="youtube.com"
+    ></textarea>
+    <p class="field-hint">One domain per line. Matching is suffix-safe (e.g. m.youtube.com matches youtube.com; fake youtube.com.evil.com does not).</p>
+    <button id="save-sites" type="button" class="btn-secondary">Save site list</button>
+
     <p class="hint">PIN is stored as SHA-256 only. Minimum length: 4 characters.</p>
 
     <div id="set-form">

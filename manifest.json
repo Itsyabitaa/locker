@@ -1,17 +1,20 @@
 {
   "manifest_version": 3,
   "name": "Locker",
-  "version": "0.3.0",
-  "description": "Lock screen overlay with PIN (SHA-256, chrome.storage).",
-  "permissions": ["storage"],
+  "version": "0.4.0",
+  "description": "Lock screen overlay with PIN, global or per-domain lock.",
+  "permissions": ["storage", "tabs"],
+  "background": {
+    "service_worker": "src/background.js"
+  },
   "action": {
-    "default_title": "Locker — PIN setup",
+    "default_title": "Locker — PIN & sites",
     "default_popup": "popup/popup.html"
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["src/sha256.js", "src/content.js"],
+      "js": ["src/sha256.js", "src/lockEngine.js", "src/content.js"],
       "run_at": "document_start"
     }
   ]

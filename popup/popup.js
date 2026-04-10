@@ -16,13 +16,34 @@ function validatePair(newPin, confirm) {
   return null;
 }
 
+function sitesArrayFromTextarea(text) {
+  return String(text || "")
+    .split(/\r?\n/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 async function init() {
-  const { pinHash, locked } = await chrome.storage.local.get(["pinHash", "locked"]);
+  const { pinHash, locked, globalLock, lockedSites } = await chrome.storage.local.get([
+    "pinHash",
+    "locked",
+    "globalLock",
+    "lockedSites",
+  ]);
   const hasPin = Boolean(pinHash);
   const lockingEnabled = locked !== false;
+  const globalOn = globalLock !== false;
 
   const lockCb = document.getElementById("lock-enabled");
   if (lockCb) lockCb.checked = lockingEnabled;
+
+  const globalCb = document.getElementById("global-lock");
+  if (globalCb) globalCb.checked = globalOn;
+
+  const sitesTa = document.getElementById("locked-sites");
+  if (sitesTa) {
+    sitesTa.value = Array.isArray(lockedSites) ? lockedSites.join("\n") : "";
+  }
 
   lockCb?.addEventListener("change", async () => {
     const on = lockCb.checked;
@@ -32,6 +53,27 @@ async function init() {
     } catch {
       setStatus("Could not update locking.", "error");
       lockCb.checked = !on;
+    }
+  });
+
+  globalCb?.addEventListener("change", async () => {
+    const on = globalCb.checked;
+    try {
+      await chrome.storage.local.set({ globalLock: on });
+      setStatus(on ? "Locking all sites." : "List-only mode.", "ok");
+    } catch {
+      setStatus("Could not update global lock.", "error");
+      globalCb.checked = !on;
+    }
+  });
+
+  document.getElementById("save-sites")?.addEventListener("click", async () => {
+    const lines = sitesArrayFromTextarea(sitesTa?.value);
+    try {
+      await chrome.storage.local.set({ lockedSites: lines });
+      setStatus("Site list saved.", "ok");
+    } catch {
+      setStatus("Could not save site list.", "error");
     }
   });
 

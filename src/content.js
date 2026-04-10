@@ -4,10 +4,18 @@
   const LOCKED_CLASS = "__locker_locked__";
   const STORAGE_KEY_PIN = "pinHash";
   const STORAGE_KEY_LOCKED = "locked";
+  const STORAGE_KEY_GLOBAL_LOCK = "globalLock";
+  const STORAGE_KEY_LOCKED_SITES = "lockedSites";
 
   let storedPinHash = null;
-  /** When false, overlay is off (escape hatch). Missing from storage defaults to true. */
-  let lockingEnabled = true;
+  /** Master switch from popup; false = never show overlay. */
+  let masterLocked = true;
+  /** When true, lock all sites (subject to masterLocked). When false, only lockedSites list. */
+  let globalLock = true;
+  let lockedSitesNormalized = [];
+  /** Last computed: should this URL show the overlay. */
+  let lastLockDecision = false;
+
   let isLocked = false;
   let guardsAdded = false;
   let keepAliveStarted = false;
@@ -168,7 +176,7 @@
     keepAliveStarted = true;
 
     const observer = new MutationObserver(() => {
-      if (!lockingEnabled || !isLocked) return;
+      if (!lastLockDecision || !isLocked) return;
       if (!document.getElementById(LOCK_ROOT_ID)) renderLock();
     });
     observer.observe(document.documentElement, { childList: true, subtree: true });
@@ -185,7 +193,7 @@
   }
 
   function renderLock() {
-    if (!lockingEnabled) return;
+    if (!lastLockDecision) return;
     if (document.getElementById(LOCK_ROOT_ID)) return;
 
     ensureStyle();
@@ -300,35 +308,66 @@
     mount();
   }
 
-  async function init() {
-    const data = await chrome.storage.local.get([STORAGE_KEY_PIN, STORAGE_KEY_LOCKED]);
-    storedPinHash = typeof data[STORAGE_KEY_PIN] === "string" ? data[STORAGE_KEY_PIN] : null;
-    lockingEnabled = data[STORAGE_KEY_LOCKED] !== false;
+  function applyStorageSnapshot(data) {
+    storedPinHash =
+      typeof data[STORAGE_KEY_PIN] === "string" ? data[STORAGE_KEY_PIN] : null;
+    masterLocked = data[STORAGE_KEY_LOCKED] !== false;
+    globalLock = data[STORAGE_KEY_GLOBAL_LOCK] !== false;
+    let sitesRaw = data[STORAGE_KEY_LOCKED_SITES];
+    if (!Array.isArray(sitesRaw)) sitesRaw = [];
+    lockedSitesNormalized = lockerNormalizeLockedSitesList(sitesRaw);
+  }
 
+  async function checkLockCondition() {
+    const data = await chrome.storage.local.get([
+      STORAGE_KEY_PIN,
+      STORAGE_KEY_LOCKED,
+      STORAGE_KEY_GLOBAL_LOCK,
+      STORAGE_KEY_LOCKED_SITES,
+    ]);
+    applyStorageSnapshot(data);
+
+    const currentHost = lockerNormalizeHostname(window.location.hostname);
+    const engineLock = lockerShouldLock({
+      globalLock,
+      lockedSites: lockedSitesNormalized,
+      currentHost,
+    });
+    lastLockDecision = Boolean(masterLocked && engineLock);
+
+    if (!lastLockDecision) {
+      removeLock();
+      return;
+    }
+    if (document.getElementById(LOCK_ROOT_ID)) removeLock();
+    renderLock();
+  }
+
+  function init() {
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area !== "local") return;
-      const pinCh = changes[STORAGE_KEY_PIN];
-      const lockedCh = changes[STORAGE_KEY_LOCKED];
-      if (!pinCh && !lockedCh) return;
+      const keys = [
+        STORAGE_KEY_PIN,
+        STORAGE_KEY_LOCKED,
+        STORAGE_KEY_GLOBAL_LOCK,
+        STORAGE_KEY_LOCKED_SITES,
+      ];
+      if (!keys.some((k) => changes[k])) return;
+      void checkLockCondition();
+    });
 
-      if (pinCh) {
-        storedPinHash =
-          pinCh.newValue != null && typeof pinCh.newValue === "string" ? pinCh.newValue : null;
+    chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+      if (msg && msg.action === "CHECK_LOCK") {
+        checkLockCondition()
+          .then(() => sendResponse({ ok: true }))
+          .catch(() => sendResponse({ ok: false }));
+        return true;
       }
-      if (lockedCh) {
-        lockingEnabled = lockedCh.newValue !== false;
-      }
-
-      if (!lockingEnabled) {
-        removeLock();
-        return;
-      }
-      if (document.getElementById(LOCK_ROOT_ID)) removeLock();
-      renderLock();
+      return undefined;
     });
 
     startKeepAlive();
-    if (lockingEnabled) renderLock();
+    void checkLockCondition();
   }
 
   init();
