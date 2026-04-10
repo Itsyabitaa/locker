@@ -6,7 +6,7 @@ Manifest V3 extension that shows a fullscreen PIN lock overlay on web pages. It 
 
 - **PIN unlock** — PIN is hashed with **SHA-256** and stored in `chrome.storage.local` (not plaintext).
 - **Settings page** — `options/options.html` (opens in a tab): set or change PIN, auto-lock, inactivity timeout, lock scope.
-- **Toolbar popup** — Quick entry point; **Open settings** opens the full options page.
+- **Toolbar popup** — Quick panel: locking status, **Lock** (quick-lock all tabs), **Unlock** (opens Settings), and **Open full settings**.
 - **Lock scope**
   - **Lock all websites** — overlay on matching pages when locking is enabled.
   - **Domain list** — when global lock is off, only listed domains match (normalized hostnames, suffix-safe matching so `youtube.com.evil.com` does not match `youtube.com`).
@@ -29,38 +29,56 @@ After code changes: on the extensions page, click **Reload** on Locker, then rel
 
 | Where | What |
 |--------|------|
-| **Extension icon → popup** | Open full settings |
+| **Extension icon → popup** | Status, quick lock, shortcuts to Settings |
 | **Extension details → Extension options** | Same settings page |
 | **Settings** | PIN, locking on/off, global vs list, domains, auto-lock and minutes |
 
 Settings persist in **`chrome.storage.local`** (survives browser restart; clearing **site data** for extensions is separate from normal cache clearing).
 
-## Project layout
+## Project layout (separation of concerns)
+
+- **UI** — `popup/`, `options/`, `content/overlay/`, `components/` (shared modal / buttons; PIN modal template).
+- **Logic** — `content/engine/` (lock rules), `shared/hash.js` (crypto helpers).
+- **State** — `shared/storage.js` (and `chrome.storage` in options/popup where appropriate).
+- **Control** — `background/background.js`, `content/content.js` (orchestration).
 
 ```
 locker/
 ├── manifest.json
 ├── background/
-│   └── background.js       # Storage broadcast, quick-lock command (importScripts shared/constants)
+│   └── background.js
 ├── shared/
-│   ├── constants.js        # Storage keys, LockerEvents, limits
-│   ├── storage.js          # chrome.storage.local read helpers
-│   ├── utils.js            # PIN validation, site list parsing
-│   └── hash.js             # SHA-256 + timing-safe compare
+│   ├── constants.js
+│   ├── storage.js
+│   ├── utils.js
+│   └── hash.js
+├── components/
+│   ├── components.css
+│   ├── modal.js
+│   ├── button.js
+│   ├── input.js
+│   ├── toggle.js
+│   ├── pinModal.html
+│   └── pinModal.js
 ├── content/
-│   ├── content.js          # Orchestrator: guards, auto-lock, messages
+│   ├── content.js
 │   ├── engine/
-│   │   └── lockEngine.js   # Domain normalize + shouldLock (pure)
+│   │   └── lockEngine.js
 │   ├── session/
 │   │   └── sessionManager.js
 │   └── overlay/
-│       ├── overlay.html    # Overlay markup (fetched by overlay.js)
+│       ├── overlay.html
 │       ├── overlay.css
-│       └── overlay.js      # Mount/unmount, PIN UI wiring
+│       └── overlay.js
 ├── options/
 │   ├── options.html
 │   ├── options.css
-│   └── options.js
+│   ├── options.js          # wires section modules
+│   └── sections/
+│       ├── generalSettings.js
+│       ├── siteManager.js
+│       ├── securitySettings.js
+│       └── autoLockSettings.js
 └── popup/
     ├── popup.html
     ├── popup.css
